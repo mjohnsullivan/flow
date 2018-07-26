@@ -1,0 +1,17 @@
+name: flow
+description: An experiment in Flutter state management
+version: 0.0.1
+author: Matt Sullivan
+homepage: https://flutter.io
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  rxdart: ^0.18.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
