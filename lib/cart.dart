@@ -13,34 +13,44 @@ abstract class CartItem {
   // Wrappers to return the latest value in the underlying streams
   final Item item;
   int count;
-  int cost;
+  final int cost;
 
-  factory CartItem(Item item, {int count, int cost}) {
-    return CartItemImpl(item, count: count, cost: cost);
+  /// Factory builder to return the concrete implementation
+  factory CartItem(Item item, {int count}) {
+    return CartItemImpl(item, count: count);
   }
 }
 
 class CartItemImpl implements CartItem {
-  CartItemImpl(Item item, {int count, int cost})
+  CartItemImpl(Item item, {int count})
       : assert(item != null),
         _item = item,
         _countBehaviorSubject = count != null
             ? BehaviorSubject<int>(seedValue: count)
             : BehaviorSubject<int>(),
-        _costBehaviorSubject = cost != null
-            ? BehaviorSubject<int>(seedValue: cost)
-            : BehaviorSubject<int>();
+        _costBehaviorSubject = count != null
+            ? BehaviorSubject<int>(seedValue: count * item.price)
+            : BehaviorSubject<int>() {
+    initialize();
+  }
 
   final Item _item;
-  BehaviorSubject<int> _countBehaviorSubject;
-  BehaviorSubject<int> _costBehaviorSubject;
+  final BehaviorSubject<int> _countBehaviorSubject;
+  // cost needs to be a behavior subject as its bindable to the UI
+  final BehaviorSubject<int> _costBehaviorSubject;
 
   Item get item => _item;
   int get count => _countBehaviorSubject.value;
   int get cost => _costBehaviorSubject.value;
 
   set count(int value) => _countBehaviorSubject.add(value);
-  set cost(int value) => _costBehaviorSubject.add(value);
+  // Cost cannot be updated outside the class
+  set _cost(int value) => _costBehaviorSubject.add(value);
+
+  // Initializes dependencies between class variables
+  void initialize() {
+    _countBehaviorSubject.listen((count) => _cost = item.price * count);
+  }
 }
 
 class CartItemProvider extends InheritedWidget {
