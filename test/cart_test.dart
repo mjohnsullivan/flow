@@ -26,7 +26,7 @@ void main() {
     expect(cartItem.cost, 990);
   });
 
-  test('updates count in a CartItem', () async {
+  test('updates count and cost in a CartItem', () async {
     final item = Item('ACME Widget', 99);
 
     final cartItem = CartItem(item);
@@ -41,6 +41,21 @@ void main() {
     await Future.delayed(const Duration(microseconds: 1), () {});
     expect(cartItem.cost, 1089);
   });
+
+  /*
+  test('cost in a CartItem cannot be directly updated', () async {
+    final item = Item('ACME Widget', 99);
+
+    final cartItem = CartItem(item);
+    expect(cartItem.item.name, 'ACME Widget');
+    expect(cartItem.item.price, 99);
+    expect(cartItem.cost, null);
+    expect(cartItem.count, null);
+
+    cartItem.cost = 11;
+    expect(cartItem.cost, null);
+  });
+  */
 
   testWidgets('CartProvider is available in the widget tree', (tester) async {
     final cartItem = CartItem(Item('ACME Widget', 99));
@@ -59,7 +74,7 @@ void main() {
   });
 
   testWidgets(
-      'CartItemCountConnector and CartItemCostConnector update when the stream updates',
+      'CartItemCountConnector and CartItemCostConnector update when the streams update',
       (tester) async {
     final cartItem = CartItem(Item('ACME Widget', 99), count: 0);
 
@@ -81,6 +96,61 @@ void main() {
                           CartItemCountConnector(
                               (count) => Text('Count: $count')),
                           CartItemCostConnector((cost) => Text('Cost: $cost')),
+                        ],
+                      ),
+                    )),
+          ),
+    ));
+
+    // Wait for first value to flow through stream
+    await tester.pump(Duration(microseconds: 1));
+    expect(find.text('Count: 0'), findsOneWidget);
+    expect(find.text('Cost: 0'), findsOneWidget);
+
+    await tester.tap(find.byKey(tapCountKey));
+    // Wait for new value to flow through stream
+    await tester.pump(Duration(microseconds: 1));
+    expect(find.text('Count: 1'), findsOneWidget);
+    expect(find.text('Cost: 99'), findsOneWidget);
+
+    await tester.tap(find.byKey(tapCountKey));
+    // Wait for new value to flow through stream
+    await tester.pump(Duration(microseconds: 1));
+    expect(find.text('Count: 2'), findsOneWidget);
+    expect(find.text('Cost: 198'), findsOneWidget);
+
+    await tester.tap(find.byKey(tapCountKey));
+    // Wait for new value to flow through stream
+    await tester.pump(Duration(microseconds: 1));
+    expect(find.text('Count: 3'), findsOneWidget);
+    expect(find.text('Cost: 297'), findsOneWidget);
+  });
+
+  testWidgets('CartItemConnector updates when the streams update',
+      (tester) async {
+    final cartItem = CartItem(Item('ACME Widget', 99), count: 0);
+
+    final tapCountKey = UniqueKey();
+    await tester.pumpWidget(WidgetsApp(
+      color: Color(0xFF000000),
+      builder: (context, _) => CartItemProvider(
+            cartItem: cartItem,
+            child: Builder(
+                builder: (context) => Directionality(
+                      textDirection: TextDirection.ltr,
+                      child: Row(
+                        children: [
+                          GestureDetector(
+                            key: tapCountKey,
+                            onTap: () => CartItemProvider.of(context).count++,
+                            child: Text('Tap Count'),
+                          ),
+                          CartItemConnector((count, cost) {
+                            return Row(children: [
+                              Text('Count: $count'),
+                              Text('Cost: $cost'),
+                            ]);
+                          }),
                         ],
                       ),
                     )),
